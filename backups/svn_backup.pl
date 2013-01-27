@@ -2,7 +2,7 @@
 
 use strict;
 use Net::Amazon::EC2;
-use LWP;
+use LWP::Simple;
 
 # We want to backup Subversion in a belt and braces manner
 # by:
@@ -14,14 +14,17 @@ use LWP;
 
 # We source our EC2 details from another file as I don't want
 # my Amazon credentials available on Git
-require 'aws_keys.pl';
+# We set the path by making our location a lib:
+use lib  '/opt/aws';
+use aws_keys;
 # Our keys should be in a file like this:
-# filename "aws_keys.pl"
+# filename "/opt/aws/aws_keys.pm"
 # ----------------------------------
 # our ($accesskeyid, $secret );
-# $accesskeyid = "1234"
-# $secret = "4567"
+# $accesskeyid = "1234";
+# $secret = "4567";
 # ----------------------------------
+# Set perms to only be root readable
 # The file aws_keys.pl gives us the 2 vars above
 
 # Create a connection to AWS:
@@ -35,8 +38,11 @@ require 'aws_keys.pl';
 # All EC2 instances cat get info about themselves
 # from a local http call:
 # http://169.254.169.254/latest/meta-data/
-
-$instance_id = HTTP::Request->new(GET => 'http://169.254.169.254/latest/meta-data/instance-id');
+my $url = 'http://169.254.169.254/latest/meta-data/instance-id ';
+my $instance_id = get($url);
+if (!defined $instance_id) {
+    die "failed to fetch URL $url";
+}
 
 print "$instance_id\n";
 
